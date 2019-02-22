@@ -60,7 +60,7 @@ $container = new Container([
         {
             return [
                 'settings' => function (): array {
-                    return [ 'addContentLengthHeader' => true ];
+                    return [ 'addContentLengthHeader' => false ];
                     // might be from file:
                     //return require __DIR__ . '/config/settings.php';
                 },
