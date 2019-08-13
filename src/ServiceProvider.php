@@ -9,9 +9,11 @@ use Slim\App;
 use Slim\CallableResolver;
 use Slim\Factory\AppFactory;
 use Slim\Interfaces\CallableResolverInterface;
+use Slim\Interfaces\DispatcherInterface;
 use Slim\Interfaces\RouteCollectorInterface;
 use Slim\Interfaces\RouteResolverInterface;
 use Slim\DefaultServicesProvider;
+use Slim\Routing\Dispatcher;
 use Slim\Routing\RouteCollector;
 use Slim\Routing\RouteResolver;
 
@@ -23,6 +25,7 @@ class ServiceProvider implements ServiceProviderInterface
         return [
             App::class => [ self::class, 'getApp' ],
             CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
+            DispatcherInterface::class => [ self::class, 'getDispatcher' ],
             ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
             RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
             RouteResolverInterface::class => [ self::class, 'getRouteResolver' ],
@@ -55,6 +58,13 @@ class ServiceProvider implements ServiceProviderInterface
         return new CallableResolver($container);
     }
 
+    public static function getDispatcher(ContainerInterface $container): DispatcherInterface
+    {
+        return new Dispatcher(
+            $container->get(RouteCollectorInterface::class)
+        );
+    }
+
     public static function getRouteCollector(ContainerInterface $container): RouteCollectorInterface
     {
         $responseFactory = $container->has(ResponseFactoryInterface::class) ?
@@ -69,8 +79,9 @@ class ServiceProvider implements ServiceProviderInterface
 
     public static function getRouteResolver(ContainerInterface $container): RouteResolverInterface
     {
-        // @todo fetch dispatcher from container
-        $dispatcher = null;
-        return new RouteResolver($container->get(RouteCollectorInterface::class), $dispatcher);
+        return new RouteResolver(
+            $container->get(RouteCollectorInterface::class),
+            $container->get(DispatcherInterface::class)
+        );
     }
 }
