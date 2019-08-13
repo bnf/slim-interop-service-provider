@@ -69,6 +69,8 @@ $container = new Container([
             return [
                 // configure app route and middlewares as extension to the App class
                 App::class => function (ContainerInterface $container, App $app): App {
+                    $app->addErrorMiddleware(true, true, true);
+
                     $app->get('/', Index::class);
 
                     return $app;
