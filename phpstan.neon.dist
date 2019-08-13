@@ -6,8 +6,3 @@ parameters:
 
   paths:
     - src
-
-  ignoreErrors:
-    # This is a slight abuse of the interface, which will be removed when switching to slim v4
-    - '#Parameter .1 .container of method Slim.DefaultServicesProvider::register.. expects Slim.Container, ArrayObject given.#'
-

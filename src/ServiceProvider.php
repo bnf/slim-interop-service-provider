@@ -2,53 +2,75 @@
 declare(strict_types = 1);
 namespace Bnf\SlimInterop;
 
-use ArrayObject;
 use Interop\Container\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Slim\App;
+use Slim\CallableResolver;
+use Slim\Factory\AppFactory;
+use Slim\Interfaces\CallableResolverInterface;
+use Slim\Interfaces\RouteCollectorInterface;
+use Slim\Interfaces\RouteResolverInterface;
 use Slim\DefaultServicesProvider;
+use Slim\Routing\RouteCollector;
+use Slim\Routing\RouteResolver;
 
 class ServiceProvider implements ServiceProviderInterface
 {
 
     public function getFactories(): array
     {
-        $fakeContainer = new ArrayObject([
+        return [
             App::class => [ self::class, 'getApp' ],
-        ]);
-
-        $defaultServiceProvider = new DefaultServicesProvider;
-        $defaultServiceProvider->register($fakeContainer);
-
-        return $fakeContainer->getArrayCopy();
+            CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
+            ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
+            RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
+            RouteResolverInterface::class => [ self::class, 'getRouteResolver' ],
+        ];
     }
 
     public function getExtensions(): array
     {
-        return [
-            'settings' => [ self::class, 'addDefaultSettings' ]
-        ];
+        return [];
     }
 
     public static function getApp(ContainerInterface $container): App
     {
-        return new App($container);
+        return AppFactory::create(
+            $container->get(ResponseFactoryInterface::class),
+            $container,
+            $container->get(CallableResolverInterface::class),
+            $container->get(RouteCollectorInterface::class),
+            $container->get(RouteResolverInterface::class)
+        );
     }
 
-    public static function addDefaultSettings(ContainerInterface $container, array $settings = null): array
+    public static function getResponseFactory(ContainerInterface $container): ResponseFactoryInterface
     {
-        $settings = $settings ?? [];
+        return AppFactory::determineResponseFactory();
+    }
 
-        $defaultSlimSettings = [
-            'httpVersion' => '1.1',
-            'responseChunkSize' => 4096,
-            'outputBuffering' => 'append',
-            'determineRouteBeforeAppMiddleware' => false,
-            'displayErrorDetails' => false,
-            'addContentLengthHeader' => true,
-            'routerCacheFile' => false,
-        ];
+    public static function getCallableResolver(ContainerInterface $container): CallableResolverInterface
+    {
+        return new CallableResolver($container);
+    }
 
-        return $settings + $defaultSlimSettings;
+    public static function getRouteCollector(ContainerInterface $container): RouteCollectorInterface
+    {
+        $responseFactory = $container->has(ResponseFactoryInterface::class) ?
+            $container->get(ResponseFactoryInterface::class) : AppFactory::determineResponseFactory();
+        $callableResolver = $container->get(CallableResolverInterface::class);
+        // @todo
+        $invocationStrategy = null;
+        $cacheFile = $container->has('slim.route_cache_file') ? $container->get('slim.route_cache_file') : null;
+
+        return new RouteCollector($responseFactory, $callableResolver, $container, $invocationStrategy, $cacheFile);
+    }
+
+    public static function getRouteResolver(ContainerInterface $container): RouteResolverInterface
+    {
+        // @todo fetch dispatcher from container
+        $dispatcher = null;
+        return new RouteResolver($container->get(RouteCollectorInterface::class), $dispatcher);
     }
 }

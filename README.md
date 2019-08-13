@@ -7,7 +7,7 @@ support for Slim.
 ## Installation
 
 ```sh
-$ composer require bnf/slim-interop-service-provider:^3.0
+$ composer require bnf/slim-interop-service-provider:^4.0
 ```
 
 ## Usage
@@ -28,7 +28,7 @@ new Container([
 Example usage with a `container-interop/service-provider` compatible container `bnf/di`.
 
 ```sh
-$ composer require bnf/slim-interop-service-provider:^3.0 bnf/di:~0.1.0 slim/slim:^3.0
+$ composer require bnf/slim-interop-service-provider:^4.0 bnf/di:~0.1.0 slim/slim:^4.0 slim/psr7:~0.4.0
 ```
 
 ```php
@@ -59,11 +59,6 @@ $container = new Container([
         public function getFactories(): array
         {
             return [
-                'settings' => function (): array {
-                    return [ 'addContentLengthHeader' => false ];
-                    // might be from file:
-                    //return require __DIR__ . '/config/settings.php';
-                },
                 Index::class => function (ContainerInterface $container): Index {
                     return new Index;
                 }
