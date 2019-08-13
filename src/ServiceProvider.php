@@ -10,9 +10,11 @@ use Slim\CallableResolver;
 use Slim\Factory\AppFactory;
 use Slim\Interfaces\CallableResolverInterface;
 use Slim\Interfaces\DispatcherInterface;
+use Slim\Interfaces\InvocationStrategyInterface;
 use Slim\Interfaces\RouteCollectorInterface;
 use Slim\Interfaces\RouteResolverInterface;
 use Slim\DefaultServicesProvider;
+use Slim\Handlers\Strategies\RequestResponse;
 use Slim\Routing\Dispatcher;
 use Slim\Routing\RouteCollector;
 use Slim\Routing\RouteResolver;
@@ -26,6 +28,7 @@ class ServiceProvider implements ServiceProviderInterface
             App::class => [ self::class, 'getApp' ],
             CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
             DispatcherInterface::class => [ self::class, 'getDispatcher' ],
+            InvocationStrategyInterface::class => [ self::class, 'getInvocationStrategy' ],
             ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
             RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
             RouteResolverInterface::class => [ self::class, 'getRouteResolver' ],
@@ -65,13 +68,17 @@ class ServiceProvider implements ServiceProviderInterface
         );
     }
 
+    public static function getInvocationStrategy(): InvocationStrategyInterface
+    {
+        return new RequestResponse;
+    }
+
     public static function getRouteCollector(ContainerInterface $container): RouteCollectorInterface
     {
         $responseFactory = $container->has(ResponseFactoryInterface::class) ?
             $container->get(ResponseFactoryInterface::class) : AppFactory::determineResponseFactory();
         $callableResolver = $container->get(CallableResolverInterface::class);
-        // @todo
-        $invocationStrategy = null;
+        $invocationStrategy = $container->get(InvocationStrategyInterface::class);
         $cacheFile = $container->has('slim.route_cache_file') ? $container->get('slim.route_cache_file') : null;
 
         return new RouteCollector($responseFactory, $callableResolver, $container, $invocationStrategy, $cacheFile);
