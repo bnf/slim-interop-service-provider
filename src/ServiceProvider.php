@@ -11,6 +11,7 @@ use Slim\Factory\AppFactory;
 use Slim\Interfaces\CallableResolverInterface;
 use Slim\Interfaces\DispatcherInterface;
 use Slim\Interfaces\InvocationStrategyInterface;
+use Slim\Interfaces\ErrorHandlerInterface;
 use Slim\Interfaces\RouteCollectorInterface;
 use Slim\Interfaces\RouteResolverInterface;
 use Slim\DefaultServicesProvider;
@@ -29,6 +30,7 @@ class ServiceProvider implements ServiceProviderInterface
             CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
             DispatcherInterface::class => [ self::class, 'getDispatcher' ],
             InvocationStrategyInterface::class => [ self::class, 'getInvocationStrategy' ],
+            ErrorHandlerInterface::class => [ self::class, 'getErrorHandler' ],
             ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
             RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
             RouteResolverInterface::class => [ self::class, 'getRouteResolver' ],
@@ -51,11 +53,6 @@ class ServiceProvider implements ServiceProviderInterface
         );
     }
 
-    public static function getResponseFactory(ContainerInterface $container): ResponseFactoryInterface
-    {
-        return AppFactory::determineResponseFactory();
-    }
-
     public static function getCallableResolver(ContainerInterface $container): CallableResolverInterface
     {
         return new CallableResolver($container);
@@ -71,6 +68,16 @@ class ServiceProvider implements ServiceProviderInterface
     public static function getInvocationStrategy(): InvocationStrategyInterface
     {
         return new RequestResponse;
+    }
+
+    public static function getErrorHandler(): ErrorHandlerInterface
+    {
+        return new ErrorHandler;
+    }
+
+    public static function getResponseFactory(ContainerInterface $container): ResponseFactoryInterface
+    {
+        return AppFactory::determineResponseFactory();
     }
 
     public static function getRouteCollector(ContainerInterface $container): RouteCollectorInterface
