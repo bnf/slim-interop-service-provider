@@ -32,7 +32,8 @@ class ServiceProvider implements ServiceProviderInterface
             CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
             DispatcherInterface::class => [ self::class, 'getDispatcher' ],
             InvocationStrategyInterface::class => [ self::class, 'getInvocationStrategy' ],
-            ErrorHandlerInterface::class => [ self::class, 'getErrorHandler' ],
+            ErrorHandler::class => [ self::class, 'getErrorHandler' ],
+            ErrorHandlerInterface::class => [ self::class, 'getDefaultErrorHandler' ],
             ErrorMiddleware::class => [ self::class, 'getErrorMiddleware' ],
             ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
             RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
@@ -73,7 +74,12 @@ class ServiceProvider implements ServiceProviderInterface
         return new RequestResponse;
     }
 
-    public static function getErrorHandler(ContainerInterface $container): ErrorHandlerInterface
+    public static function getDefaultErrorHandler(ContainerInterface $container): ErrorHandlerInterface
+    {
+        return $container->get(ErrorHandler::class);
+    }
+
+    public static function getErrorHandler(ContainerInterface $container): ErrorHandler
     {
         return new ErrorHandler(
             $container->get(CallableResolverInterface::class),
