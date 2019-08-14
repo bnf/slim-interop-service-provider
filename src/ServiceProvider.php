@@ -11,10 +11,13 @@ use Slim\Factory\AppFactory;
 use Slim\Interfaces\CallableResolverInterface;
 use Slim\Interfaces\DispatcherInterface;
 use Slim\Interfaces\InvocationStrategyInterface;
+use Slim\Interfaces\ErrorHandlerInterface;
 use Slim\Interfaces\RouteCollectorInterface;
 use Slim\Interfaces\RouteResolverInterface;
 use Slim\DefaultServicesProvider;
+use Slim\Handlers\ErrorHandler;
 use Slim\Handlers\Strategies\RequestResponse;
+use Slim\Middleware\ErrorMiddleware;
 use Slim\Routing\Dispatcher;
 use Slim\Routing\RouteCollector;
 use Slim\Routing\RouteResolver;
@@ -29,6 +32,8 @@ class ServiceProvider implements ServiceProviderInterface
             CallableResolverInterface::class => [ self::class, 'getCallableResolver' ],
             DispatcherInterface::class => [ self::class, 'getDispatcher' ],
             InvocationStrategyInterface::class => [ self::class, 'getInvocationStrategy' ],
+            ErrorHandlerInterface::class => [ self::class, 'getErrorHandler' ],
+            ErrorMiddleware::class => [ self::class, 'getErrorMiddleware' ],
             ResponseFactoryInterface::class => [ self::class, 'getResponseFactory' ],
             RouteCollectorInterface::class => [ self::class, 'getRouteCollector' ],
             RouteResolverInterface::class => [ self::class, 'getRouteResolver' ],
@@ -51,11 +56,6 @@ class ServiceProvider implements ServiceProviderInterface
         );
     }
 
-    public static function getResponseFactory(ContainerInterface $container): ResponseFactoryInterface
-    {
-        return AppFactory::determineResponseFactory();
-    }
-
     public static function getCallableResolver(ContainerInterface $container): CallableResolverInterface
     {
         return new CallableResolver($container);
@@ -73,10 +73,42 @@ class ServiceProvider implements ServiceProviderInterface
         return new RequestResponse;
     }
 
+    public static function getErrorHandler(ContainerInterface $container): ErrorHandlerInterface
+    {
+        return new ErrorHandler(
+            $container->get(CallableResolverInterface::class),
+            $container->get(ResponseFactoryInterface::class)
+        );
+    }
+
+    public static function getErrorMiddleware(ContainerInterface $c): ErrorMiddleware
+    {
+        $callableResolver = $c->get(CallableResolverInterface::class);
+        $responseFactory = $c->get(ResponseFactoryInterface::class);
+        $displayErrorDetails = $c->has('slim.display_error_details') ? $c->get('slim.display_error_details') : false;
+        $logErrors = $c->has('slim.log_errors') ? $c->get('slim.log_errors') : false;
+        $logErrorDetails = $c->has('slim.log_error_details') ? $c->get('slim.log_error_details') : false;
+
+        $errorMiddleware = new ErrorMiddleware(
+            $callableResolver,
+            $responseFactory,
+            $displayErrorDetails,
+            $logErrors,
+            $logErrorDetails
+        );
+        $errorMiddleware->setDefaultErrorHandler(ErrorHandlerInterface::class);
+
+        return $errorMiddleware;
+    }
+
+    public static function getResponseFactory(ContainerInterface $container): ResponseFactoryInterface
+    {
+        return AppFactory::determineResponseFactory();
+    }
+
     public static function getRouteCollector(ContainerInterface $container): RouteCollectorInterface
     {
-        $responseFactory = $container->has(ResponseFactoryInterface::class) ?
-            $container->get(ResponseFactoryInterface::class) : AppFactory::determineResponseFactory();
+        $responseFactory = $container->get(ResponseFactoryInterface::class);
         $callableResolver = $container->get(CallableResolverInterface::class);
         $invocationStrategy = $container->get(InvocationStrategyInterface::class);
         $cacheFile = $container->has('slim.route_cache_file') ? $container->get('slim.route_cache_file') : null;

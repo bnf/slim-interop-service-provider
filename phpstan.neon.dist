@@ -6,3 +6,6 @@ parameters:
 
   paths:
     - src
+
+  ignoreErrors:
+    - '#Parameter .1 .handler of method Slim.Middleware.ErrorMiddleware::setDefaultErrorHandler.. expects callable..: mixed, .*given#'

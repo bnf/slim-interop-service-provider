@@ -59,6 +59,9 @@ $container = new Container([
         public function getFactories(): array
         {
             return [
+                'slim.display_error_details' => function(): bool {
+                    return true;
+                },
                 Index::class => function (ContainerInterface $container): Index {
                     return new Index;
                 }
@@ -69,7 +72,7 @@ $container = new Container([
             return [
                 // configure app route and middlewares as extension to the App class
                 App::class => function (ContainerInterface $container, App $app): App {
-                    $app->addErrorMiddleware(true, true, true);
+                    $app->add(\Slim\Middleware\ErrorMiddleware::class);
 
                     $app->get('/', Index::class);
 
