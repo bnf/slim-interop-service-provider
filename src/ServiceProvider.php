@@ -113,7 +113,14 @@ class ServiceProvider implements ServiceProviderInterface
         $invocationStrategy = $container->get(InvocationStrategyInterface::class);
         $cacheFile = $container->has('slim.route_cache_file') ? $container->get('slim.route_cache_file') : null;
 
-        return new RouteCollector($responseFactory, $callableResolver, $container, $invocationStrategy, null, $cacheFile);
+        return new RouteCollector(
+            $responseFactory,
+            $callableResolver,
+            $container,
+            $invocationStrategy,
+            null,
+            $cacheFile
+        );
     }
 
     public static function getRouteResolver(ContainerInterface $container): RouteResolverInterface
